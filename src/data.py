@@ -29,9 +29,9 @@ def actualizar_tipo_cambio():
     directorio.mkdir(parents=True, exist_ok=True)
 
     #Se guardan en un csv
-    df_minidevaluaciones.to_csv(directorio/ 'modeloMinidevaluaciones.csv', index=False)
-    df_bandas.to_csv(directorio/'modeloBandas.csv', index=False)
-    df_flotacion.to_csv(directorio/'modeloFlotacion.csv', index=False)
+    df_minidevaluaciones.to_csv(directorio/ 'modeloMinidevaluaciones.csv')
+    df_bandas.to_csv(directorio/'modeloBandas.csv')
+    df_flotacion.to_csv(directorio/'modeloFlotacion.csv')
 
 def actualizar_covariables():
     INDICADORES = {
