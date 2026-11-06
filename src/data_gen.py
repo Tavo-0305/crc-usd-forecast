@@ -5,6 +5,7 @@ from bccr import SW
 from datetime import date
 from pathlib import Path
 import os
+import pandas_datareader.data as web
 
 
 def actualizar_tipo_cambio():
@@ -32,6 +33,11 @@ def actualizar_tipo_cambio():
     df_minidevaluaciones.to_csv(directorio/ 'modeloMinidevaluaciones.csv')
     df_bandas.to_csv(directorio/'modeloBandas.csv')
     df_flotacion.to_csv(directorio/'modeloFlotacion.csv')
+    #Aprovecho la actualizacion del tipo de cambio para actualizar la cov: FEDFUNDS
+    #Descarga
+    df_fedfunds = web.DataReader("FEDFUNDS", "fred", start="2015-01-01")
+    #Guardar csv
+    df_fedfunds.to_csv(directorio/'fedfunds.csv')
 
 def actualizar_covariables():
     INDICADORES = {
