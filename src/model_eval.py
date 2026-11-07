@@ -60,36 +60,127 @@ print(corr_test(cov_df))
 
 #Modelos
 
-def XGBoost(train_data,val_data,cov_train_data,conv_val_data,lags,past_cov_lags,output_chunk_l,rand_s):
+def XGBoost(train_data,val_data,cov_train_data,cov_val_data,lags,past_cov_lags,output_chunk_l,rand_s):
+    '''
+    lags:
+    past_cov:
+    output_chunk:
+    rand_s:
+
+    Para la predicción se puede utilizar el set completo de covariables
+    '''
     model = XGBModel(
         lags=lags,
         lags_past_covariates= past_cov_lags, 
         output_chunk_length= output_chunk_l,
-        random_state= rand_s 
+        random_state= rand_s
+    )
+    model.fit(series=train_data,past_covariates=cov_train_data)
+    cov_total = cov_train_data.append(cov_val_data)
+    forecast = model.predict(n=len(val_data),series=train_data,past_covariates=cov_total) 
+    return forecast
+
+def RNN(
+    train_data, val_data,
+    cov_train_data, cov_val_data,
+    input_chunk_l, output_chunk_l,
+    hidden_dim, n_rnn_layers,
+    dropout, n_epochs, batch_size, rand_s
+):
+    model = BlockRNNModel(
+        model="RNN",
+        input_chunk_length=input_chunk_l,
+        output_chunk_length=output_chunk_l,
+        hidden_dim=hidden_dim,
+        n_rnn_layers=n_rnn_layers,
+        dropout=dropout,
+        n_epochs=n_epochs,
+        batch_size=batch_size,
+        random_state=rand_s
     )
 
-def RNN():
+    model.fit(
+        series=scale(train_data),
+        past_covariates=scale(cov_train_data)
+    )
+
+    cov_total = scale(cov_train_data.append(cov_val_data))
+
+    forecast = model.predict(
+        n=len(val_data),
+        series=train_data,
+        past_covariates=cov_total
+    )
+
+    return de_scale(forecast)
+
+def LSTM(
+    train_data, val_data,
+    cov_train_data, cov_val_data,
+    input_chunk_l, output_chunk_l,
+    hidden_dim, n_rnn_layers,
+    dropout, n_epochs, batch_size, rand_s
+):
+    model = BlockRNNModel(
+        model="LSTM",
+        input_chunk_length=input_chunk_l,
+        output_chunk_length=output_chunk_l,
+        hidden_dim=hidden_dim,
+        n_rnn_layers=n_rnn_layers,
+        dropout=dropout,
+        n_epochs=n_epochs,
+        batch_size=batch_size,
+        random_state=rand_s
+    )
+
+    model.fit(
+        series=scale(train_data),
+        past_covariates=scale(cov_train_data)
+    )
+
+    cov_total = scale(cov_train_data.append(cov_val_data))
+
+    forecast = model.predict(
+        n=len(val_data),
+        series=train_data,
+        past_covariates=cov_total
+    )
+
+    return de_scale(forecast)
+
+def GRU(
+    train_data, val_data,
+    cov_train_data, cov_val_data,
+    input_chunk_l, output_chunk_l,
+    hidden_dim, n_rnn_layers,
+    dropout, n_epochs, batch_size, rand_s
+):
+    model = BlockRNNModel(
+        model="GRU",
+        input_chunk_length=input_chunk_l,
+        output_chunk_length=output_chunk_l,
+        hidden_dim=hidden_dim,
+        n_rnn_layers=n_rnn_layers,
+        dropout=dropout,
+        n_epochs=n_epochs,
+        batch_size=batch_size,
+        random_state=rand_s
+    )
+
+    model.fit(
+        series=scale(train_data),
+        past_covariates=scale(cov_train_data)
+    )
+
+    cov_total = scale(cov_train_data.append(cov_val_data))
+
+    forecast = model.predict(
+        n=len(val_data),
+        series=train_data,
+        past_covariates=cov_total
+    )
+
+    return de_scale(forecast)
+
+def run_model():
     pass
-def LSTM():
-    pass
-def GRU():
-    pass 
-
-
-model = XGBModel(
-    lags=30,
-    lags_past_covariates=30,
-    output_chunk_length=7,
-    random_state=42
-)
-
-model.fit(
-    series=train,
-    past_covariates=cov_train
-)
-
-forecast = model.predict(
-    n=len(val),
-    series=train,
-    past_covariates=cov_train
-)
