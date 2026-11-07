@@ -51,17 +51,11 @@ def corr_test(df_cov,method='pearson'):
     corr_matrix = numeric_df.corr(method=method)
     return corr_matrix
 
-#Data Pull
-
-sales_df = pd.read_csv('model_data/ventas.csv')
-cov_df = pd.read_csv('model_data/covariables.csv')
-
-print(corr_test(cov_df))
-
 #Modelos
 
 def XGBoost(train_data,val_data,cov_train_data,cov_val_data,lags,past_cov_lags,output_chunk_l,rand_s):
     '''
+    PENDIENTE: voy a doc. params en español
     lags:
     past_cov:
     output_chunk:
@@ -78,7 +72,9 @@ def XGBoost(train_data,val_data,cov_train_data,cov_val_data,lags,past_cov_lags,o
     model.fit(series=train_data,past_covariates=cov_train_data)
     cov_total = cov_train_data.append(cov_val_data)
     forecast = model.predict(n=len(val_data),series=train_data,past_covariates=cov_total) 
-    return forecast
+    metrics = model_evaluation(val_data,forecast)
+    visualize(val_data,forecast,'XGBoost',metrics)
+    #return -> PENDIENTE:devolver algun formateo con metricas y parametros del modelo, guardarlos en algun lado en .txt para tener la info 
 
 def RNN(
     train_data, val_data,
@@ -106,13 +102,14 @@ def RNN(
 
     cov_total = scale(cov_train_data.append(cov_val_data))
 
-    forecast = model.predict(
+    forecast_ = model.predict(
         n=len(val_data),
         series=train_data,
         past_covariates=cov_total
     )
-
-    return de_scale(forecast)
+    forecast = de_scale(forecast_)
+    metrics = model_evaluation(val_data,forecast)
+    visualize(val_data,forecast,'RNN-Vanilla',metrics)
 
 def LSTM(
     train_data, val_data,
@@ -140,13 +137,16 @@ def LSTM(
 
     cov_total = scale(cov_train_data.append(cov_val_data))
 
-    forecast = model.predict(
+    forecast_ = model.predict(
         n=len(val_data),
         series=train_data,
         past_covariates=cov_total
     )
 
-    return de_scale(forecast)
+    forecast = de_scale(forecast_)
+    metrics = model_evaluation(val_data,forecast)
+    visualize(val_data,forecast,'LSTM',metrics)
+    
 
 def GRU(
     train_data, val_data,
@@ -174,13 +174,19 @@ def GRU(
 
     cov_total = scale(cov_train_data.append(cov_val_data))
 
-    forecast = model.predict(
+    forecast_ = model.predict(
         n=len(val_data),
         series=train_data,
         past_covariates=cov_total
     )
+    forecast = de_scale(forecast_)
+    metrics = model_evaluation(val_data,forecast)
+    visualize(val_data,forecast,'GRU',metrics)
+    
+    
+#Data Pull 
+sales_df = pd.read_csv('model_data/ventas.csv')
+cov_df = pd.read_csv('model_data/covariables.csv')
 
-    return de_scale(forecast)
-
-def run_model():
-    pass
+data = data_splitter(sales_df,cov_df)
+#print(corr_test(cov_df))
