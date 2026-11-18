@@ -27,8 +27,8 @@ def data_splitter(main_df,cov_df):
     #Covariables
     ts_cov = TimeSeries.from_dataframe(cov_df,value_cols=['reservas internacionales','Tasa basica'],freq="D")
     #Split
-    train, val = ts.split_before(pd.Timestamp('2026-05-31')) #train set -> hasta mayo
-    train_cov, val_cov = ts.split_before(pd.Timestamp('2026-05-31')) 
+    train, val = ts.split_before(pd.Timestamp('2026-09-30')) #train set -> hasta setiembre
+    train_cov, val_cov = ts_cov.split_before(pd.Timestamp('2026-05-31')) 
 
     return train,val,train_cov,val_cov
 
@@ -46,14 +46,20 @@ def visualize(val,forecast,model_name,metrics):
     plt.legend(f'Metricas, RMSE: {metrics[0]} - MAPE: {metrics[1]} - MAE: {metrics[2]}')
     plt.savefig(f'model_results/{model_name}_eval.pdf')
 
-def corr_test(df_cov,method='pearson'):
-    numeric_df = df_cov.select_dtypes(include='number')
-    corr_matrix = numeric_df.corr(method=method)
-    return corr_matrix
+def save_params(model_name,params,metrics): 
+    with open(f"model_results/{model_name}_results.txt", "w", encoding="utf-8") as f:
+        f.write(f'Model: {model_name}\n')
+        f.write(f'Metricas:\n')
+        f.write(f'RMSE: {metrics[0]}\n')
+        f.write(f'MAPE: {metrics[1]}\n')
+        f.write(f'MAE: {metrics[2]}\n')
+        f.write('PARAMETROS:\n')
+        for key, value in params.items():
+            f.write(f"{key}: {value}\n")
 
 #Modelos
 
-def XGBoost(train_data,val_data,cov_train_data,cov_val_data,lags,past_cov_lags,output_chunk_l,rand_s):
+def XGBoost(model_name,train_data,val_data,cov_train_data,cov_val_data,lags,past_cov_lags,output_chunk_l,rand_s):
     '''
     PENDIENTE: voy a doc. params en español
     lags:
@@ -61,7 +67,7 @@ def XGBoost(train_data,val_data,cov_train_data,cov_val_data,lags,past_cov_lags,o
     output_chunk:
     rand_s:
 
-    Para la predicción se puede utilizar el set completo de covariables
+    Para la predicción se puede utilizar el set completo de covariable
     '''
     model = XGBModel(
         lags=lags,
@@ -69,15 +75,21 @@ def XGBoost(train_data,val_data,cov_train_data,cov_val_data,lags,past_cov_lags,o
         output_chunk_length= output_chunk_l,
         random_state= rand_s
     )
+    params = {
+        'lags': lags,
+        'lags for past covariates': past_cov_lags,
+        'ouput chunk length': output_chunk_l,
+        'random state': rand_s
+    }
     model.fit(series=train_data,past_covariates=cov_train_data)
     cov_total = cov_train_data.append(cov_val_data)
     forecast = model.predict(n=len(val_data),series=train_data,past_covariates=cov_total) 
     metrics = model_evaluation(val_data,forecast)
-    visualize(val_data,forecast,'XGBoost',metrics)
-    #return -> PENDIENTE:devolver algun formateo con metricas y parametros del modelo, guardarlos en algun lado en .txt para tener la info 
+    visualize(val_data,forecast,model_name,metrics)
+    save_params(model_name,params,metrics)
 
 def RNN(
-    train_data, val_data,
+    model_name,train_data, val_data,
     cov_train_data, cov_val_data,
     input_chunk_l, output_chunk_l,
     hidden_dim, n_rnn_layers,
@@ -95,6 +107,10 @@ def RNN(
         random_state=rand_s
     )
 
+    params = {
+        
+    }
+
     model.fit(
         series=scale(train_data),
         past_covariates=scale(cov_train_data)
@@ -109,7 +125,7 @@ def RNN(
     )
     forecast = de_scale(forecast_)
     metrics = model_evaluation(val_data,forecast)
-    visualize(val_data,forecast,'RNN-Vanilla',metrics)
+    visualize(val_data,forecast,model_name,metrics)
 
 def LSTM(
     train_data, val_data,
@@ -189,4 +205,4 @@ sales_df = pd.read_csv('model_data/ventas.csv')
 cov_df = pd.read_csv('model_data/covariables.csv')
 
 data = data_splitter(sales_df,cov_df)
-#print(corr_test(cov_df))
+
